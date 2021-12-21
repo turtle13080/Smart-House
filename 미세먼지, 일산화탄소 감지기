@@ -1,0 +1,97 @@
+#include<Servo.h>
+#include<DHT11.h>
+
+int pin=2;
+Servo servo; //서브모터 이름 
+DHT11 dht11(pin);
+
+int gas= A0;  
+int measurePin=A5;
+
+
+int piezo=9; 
+int ledPower=8;
+
+
+int samplingTime = 280;
+int deltaTime=40;
+int sleepTime=9680;
+
+float voMeasure=0.0;
+float calcVoltage =0.0;
+float dustDensity=0.0; //mg/m3
+
+void setup() {
+  Serial.begin(9600);
+  servo.attach(3); //3번 핀에 서브모터 등록
+  pinMode(3, OUTPUT); //모터 출력 
+  pinMode(piezo, OUTPUT); 
+  pinMode(ledPower, OUTPUT);
+
+}
+
+void loop() {
+  int err;
+  float temp, humi;
+  if((err=dht11.read(humi, temp))==0)
+  {
+    Serial.print("temp: ");
+    Serial.print(temp);
+    Serial.print(" humi: ");
+    Serial.print(humi);
+    Serial.println();
+  }
+  if(temp<20||humi>50){
+    servo.write(35);
+  }
+  else{
+    servo.write(0);
+  }
+  delay(3000);
+  
+  int val=analogRead(gas);
+  Serial.println(val);
+  if(val>=500){
+    digitalWrite(piezo,HIGH);
+  }
+  else{
+    digitalWrite(piezo, LOW);
+  }
+  
+  digitalWrite(ledPower, LOW);//on
+  delayMicroseconds(samplingTime);
+  voMeasure=analogRead(measurePin);
+
+  delayMicroseconds(deltaTime);
+  digitalWrite(ledPower,HIGH);//off
+  delayMicroseconds(sleepTime);
+  
+  calcVoltage=voMeasure*(5.0/1024.0);
+  dustDensity=0.17*calcVoltage-0.1;
+  Serial.print("Signal Value(0-1023): ");
+  Serial.print(voMeasure);
+
+  Serial.print("- Voltage: ");
+  Serial.print(calcVoltage);
+  
+  Serial.print("- Dust density: ");
+  Serial.println(dustDensity);
+  if(dustDensity<=0.03){
+    Serial.println("Clean");
+    digitalWrite(piezo, LOW);
+  }
+  else if(0.03<=dustDensity&&dustDensity<=0.10){
+    Serial.println("Ok");
+    digitalWrite(piezo, LOW);
+  }
+  else if(0.10<=dustDensity&&dustDensity<=0.30){
+    Serial.println("High"); 
+    digitalWrite(piezo, LOW);
+  }
+  else{
+    Serial.println("WARNING");
+    digitalWrite(piezo, HIGH);
+  }
+  delay(1000);
+
+}
