@@ -1,0 +1,49 @@
+#include<Servo.h>
+#include<DHT11.h>
+Servo servo;
+int pin=2; //dht11
+DHT11 dht11(pin);
+
+int sensor = A0;
+int val=0;
+
+int led1=11;
+int led2=12;
+void setup() {
+  Serial.begin(9600);
+  servo.attach(3);
+  pinMode(3, OUTPUT);
+  pinMode(led1, OUTPUT);
+  pinMode(led2, OUTPUT);
+  
+}
+
+void loop() {
+  int cds=analogRead(sensor);
+  Serial.println(cds);
+
+  if(cds<300){
+    digitalWrite(led1, HIGH);
+    digitalWrite(led2, HIGH);
+  }
+  else{
+    digitalWrite(led1, LOW);
+    digitalWrite(led2, LOW);
+  }
+  int err;
+  float temp, humi;
+  if((err=dht11.read(humi, temp))==0)
+  {
+    Serial.print(temp);
+    Serial.print(humi);
+    }
+  delay(1000);
+  if(temp<20||humi>50)
+  {
+    servo.write(35);
+  }
+  else
+  {
+    servo.write(0);
+  }
+}
